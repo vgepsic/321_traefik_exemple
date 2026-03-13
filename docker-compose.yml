@@ -1,0 +1,41 @@
+services:
+  traefik:
+    image: traefik:v2.9
+    command:
+      - "--api.dashboard=true"      # Enables Traefik web UI 
+      - "--api.insecure=true"       # Enables Traefik web UI, authentification needed when in production
+      - "--providers.docker=true"   # Enables Docker as a provider (Traefik watches Docker events to auto-configure routes)
+      - "--providers.docker.exposedByDefault=false"  # Only containers with label "traefik.enable=true" will be exposed
+      - "--entrypoints.web.address=:80"  # Defines an entrypoint named "web" listening on port 80 (HTTP)
+    ports:
+      - "80:80"       # The HTTP port
+      - "8080:8080"   # Traefik Web UI
+    networks:
+      - web
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"  # So that Traefik can listen to the Docker events
+
+  fastapi:
+    image: tiangolo/uvicorn-gunicorn-fastapi:python3.9
+    networks:
+      - web
+    volumes:
+      - ./fastapi:/app
+    labels:
+      - "traefik.enable=true"  # Exposes this service to Traefik
+      - "traefik.http.routers.fastapi.rule=PathPrefix(`/api`)"  # Routes requests starting with /api to this service
+      - "traefik.http.services.fastapi.loadbalancer.server.port=80"  # The port where FastAPI is listening inside the container
+
+  nodeapp:
+    build: ./nodeapp
+    networks:
+      - web
+    environment:
+      - FASTAPI_URL=http://fastapi/api/hello
+    labels:
+      - "traefik.enable=true"  # Exposes this service to Traefik
+      - "traefik.http.routers.nodeapp.rule=PathPrefix(`/nodeapp`)"  # Routes requests starting with /nodeapp to this service
+      - "traefik.http.services.nodeapp.loadbalancer.server.port=3000"  # The port where the Node.js app listens inside the container
+
+networks:
+  web:
