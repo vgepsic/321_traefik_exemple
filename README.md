@@ -13,10 +13,12 @@ Traefik automatically configures routes using **Docker labels** defined in `dock
 
 ## Execution
 
-Run container composition with command : `docker compose up --build -d`
+- Option 1 - docker compose @ docker-compose.yml : `docker compose up --build -d`
+- Option 2 - docker swarm   @ docker-stack.yml   : `docker stack deploy -c docker-stack.yml <STACK_NAME>`
 
 Traefik makes app available as below :
 
-- http://localhost/api/hello → FastAPI
-- http://localhost/nodeapp/hello → Node.js
-- http://localhost:8080/dashboard → Traefik Dashboard
+- http://HOST/api/hello → FastAPI
+- http://HOST/nodeapp/hello → Node.js
+- http://HOST:8080/dashboard → Traefik Dashboard
+- http://HOST:8081 → for Swarm visualizer (only in swarm mode)
